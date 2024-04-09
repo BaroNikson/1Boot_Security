@@ -23,15 +23,22 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/", "/index").permitAll()
-                .anyRequest().authenticated()
+                .antMatchers("/", "/index").permitAll() // Разрешаем доступ к главной странице без аутентификации
+                .antMatchers("/admin").hasRole("ADMIN") // Доступ только для пользователей с ролью "ADMIN"
+                .anyRequest().authenticated() // Все остальные запросы требуют аутентификации
                 .and()
-                .formLogin().successHandler(successUserHandler)
+                .formLogin().successHandler(successUserHandler) // Включаем форму входа
                 .permitAll()
                 .and()
-                .logout()
-                .permitAll();
+                .logout() // Включаем поддержку выхода из системы
+                .logoutUrl("/logout") // Устанавливаем URL для выхода из системы
+                .logoutSuccessUrl("/login") .permitAll(); // Устанавливаем URL, на который будет перенаправлен пользователь после успешного выхода
+               // .invalidateHttpSession(true) // Недействительность HTTP-сессии при выходе
+              //  .deleteCookies("JSESSIONID") // Удаление cookie при выходе
+                // Разрешаем доступ к странице выхода без аутентификации
     }
+
+
 
     // аутентификация inMemory
     @Bean
@@ -44,6 +51,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                         .roles("USER")
                         .build();
 
-        return new InMemoryUserDetailsManager(user);
+        UserDetails admin =
+                User.withDefaultPasswordEncoder()
+                        .username("admin")
+                        .password("admin")
+                        .roles("ADMIN")
+                        .build();
+
+        return new InMemoryUserDetailsManager(user, admin);
     }
 }
